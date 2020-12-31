@@ -21,23 +21,23 @@ contexts:
         1: keyword.other.racket
         2: entity.name.namespace.racket
 
-    # Package imports
+    # Package import
     - match: \((require)\s*([\w/-]+)\s*\)
       captures:
         1: keyword.control.import.racket
         2: entity.name.namespace.racket
 
-    # Inbuilt special atomic values
-    - match: (\#t(rue)?|#f(alse)?|'\(\))
-      scope: constant.language.racket
+    # Inbuilt special atomic value
+    - match: ((\#t(rue)?|#f(alse)?|'\(\)))\b
+      captures:
+        1: constant.language.racket
 
-    # Strings begin and end with quotes, and use backslashes as an escape
-    # character
+    # String
     - match: '"'
       scope: punctuation.definition.string.begin.racket
       push: double_quoted_string
 
-    # Comments begin with a '//' and finish at the end of the line
+    # Line comment
     - match: ;
       scope: punctuation.definition.comment.racket
       push: line_comment
@@ -49,10 +49,10 @@ contexts:
 
     # TODO: broken
     # Function definition
-    - match: \(define\s+\(
-      scope: meta.function.racket
-      push: function_definition
-    # - match: \(define\s+\((\w\?\.\-)(\s+\w\?\.\-)*\)\s+
+    # - match: \(define\s+\(
+    #   scope: meta.function.racket
+    #   push: function_definition
+
 
     # Variable definition
     - match: \((define)\s+([\w\-?\+^]+)\s*
@@ -60,28 +60,27 @@ contexts:
         1: keyword.control.racket
         2: variable.other.racket
 
-    # Classes
+    # Class
     - match: \b[\w]+%
       scope: entity.name.class
 
-    # Numbers
+    # Number
     - match: '\b(-)?[0-9.]+\b'
       scope: constant.numeric.racket
 
-    # Keywords (not simply inbuilt functions)
-
+    # Keyword (not simply inbuilt functions)
     - match: \b(if|lambda|cond|define|type-case|let|letrec|let!|require|test|else|define-type|define-type-alias|define-struct|not|local|error|send|new)[\s\)]
       scope: keyword.control.racket
 
   # BROKEN
-  function_definition:
-    - meta_scope: meta.function.racket
-    - match: ^([\w\-\?]+)
-      scope: variable.function.racket
-    - match: \s+[\w\-\?]
-      push: parameters
-    - match: \)
-      pop: true
+  # function_definition:
+  #   - meta_scope: meta.function.racket
+  #   - match: ^([\w\-\?]+)
+  #     scope: variable.function.racket
+  #   - match: \s+[\w\-\?]
+  #     push: parameters
+  #   - match: \)
+  #     pop: true
 
   parameters:
     - meta_scope: meta.function.parameters.racket
