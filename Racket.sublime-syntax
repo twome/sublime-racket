@@ -1,0 +1,102 @@
+%YAML 1.2
+---
+# See:
+#   Syntax: http://www.sublimetext.com/docs/3/syntax.html
+#   Scope naming: https://www.sublimetext.com/docs/3/scope_naming.html
+
+# Note that blackslashes don't need to be escaped within single quoted
+# strings in YAML. When using single quoted strings, only single quotes
+# need to be escaped: this is done by using two single quotes next to each
+# other.
+
+file_extensions:
+  - rkt
+scope: source.racket
+first_line_match: \#lang [\w/]+
+contexts:
+  main:
+    # Language declaration
+    - match: (#lang )([\w/]+)
+      captures:
+        1: keyword.other.racket
+        2: entity.name.namespace.racket
+
+    # Package imports
+    - match: \((require)\s*([\w/-]+)\s*\)
+      captures:
+        1: keyword.control.import.racket
+        2: entity.name.namespace.racket
+
+    # Inbuilt special atomic values
+    - match: (\#t(rue)?|#f(alse)?|'\(\))
+      scope: constant.language.racket
+
+    # Strings begin and end with quotes, and use backslashes as an escape
+    # character
+    - match: '"'
+      scope: punctuation.definition.string.begin.racket
+      push: double_quoted_string
+
+    # Comments begin with a '//' and finish at the end of the line
+    - match: ;
+      scope: punctuation.definition.comment.racket
+      push: line_comment
+
+    # Function reference
+    - match: \((([\w\?\.\-]+))
+      captures:
+        1: variable.function.racket
+
+    # TODO: broken
+    # Function definition
+    - match: \(define\s+\(
+      scope: meta.function.racket
+      push: function_definition
+    # - match: \(define\s+\((\w\?\.\-)(\s+\w\?\.\-)*\)\s+
+
+    # Variable definition
+    - match: \((define)\s+([\w\-?\+^]+)\s*
+      captures:
+        1: keyword.control.racket
+        2: variable.other.racket
+
+    # Classes
+    - match: \b[\w]+%
+      scope: entity.name.class
+
+    # Numbers
+    - match: '\b(-)?[0-9.]+\b'
+      scope: constant.numeric.racket
+
+    # Keywords (not simply inbuilt functions)
+
+    - match: \b(if|lambda|cond|define|type-case|let|letrec|let!|require|test|else|define-type|define-type-alias|define-struct|not|local|error|send|new)[\s\)]
+      scope: keyword.control.racket
+
+  # BROKEN
+  function_definition:
+    - meta_scope: meta.function.racket
+    - match: ^([\w\-\?]+)
+      scope: variable.function.racket
+    - match: \s+[\w\-\?]
+      push: parameters
+    - match: \)
+      pop: true
+
+  parameters:
+    - meta_scope: meta.function.parameters.racket
+    - match: \)
+      pop: true
+
+  double_quoted_string:
+    - meta_scope: string.quoted.double.racket
+    - match: \\.
+      scope: constant.character.escape.racket
+    - match: '"'
+      scope: punctuation.definition.string.end.racket
+      pop: true
+
+  line_comment:
+    - meta_scope: comment.line.racket
+    - match: $
+      pop: true
