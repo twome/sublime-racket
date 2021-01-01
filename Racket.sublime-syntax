@@ -61,7 +61,7 @@ contexts:
         2: variable.other.racket
 
     # Classes
-    - match: \b[\w]+%
+    - match: \b[\w-]+%
       scope: entity.name.class
 
     # Numbers
@@ -69,7 +69,6 @@ contexts:
       scope: constant.numeric.racket
 
     # Keywords (not simply inbuilt functions)
-
     - match: \b(if|lambda|cond|define|type-case|let|letrec|let!|require|test|else|define-type|define-type-alias|define-struct|not|local|error|send|new)[\s\)]
       scope: keyword.control.racket
 
@@ -99,4 +98,10 @@ contexts:
   line_comment:
     - meta_scope: comment.line.racket
     - match: $
+      pop: true
+
+  # UNUSED
+  identifier:
+    - meta_scope: variable.other.racket
+    - match: /[^\w-\?\+\.=<>]/
       pop: true
