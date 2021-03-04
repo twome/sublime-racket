@@ -11,98 +11,140 @@
 
 file_extensions:
   - rkt
+
 scope: source.racket
-first_line_match: \#lang [\w/]+
+
+first_line_match: \#lang [\w\?\+-\.=<>/]+
+
+variables:
+  # ident: '[\w\?\+-\.=<>]+'
+  ident: '[\w\?\+-\.=<>/]+'
+  open_bracket: '[\(\[\{]' # Here we use "bracket" to refer to parens, squares, and curlies.
+  close_bracket: '[\)\]\}]'
+  package_name: '[\w/-]+'
+  ws: \s+ # Whitespace
+
 contexts:
+  prototype:
+    - include: can_comment
+
+  # This context is a mixin for other contexts
+  can_comment:
+    # Line comment
+    - match: ;
+      scope: punctuation.definition.comment
+      push: line_comment
+
+  # After the lang declaration, this is actually just a sequence at top-level.
   main:
     # Language declaration
-    - match: (#lang )([\w/]+)
+    - match: (#lang +)({{ident}})
       captures:
-        1: keyword.other.racket
-        2: entity.name.namespace.racket
+        1: keyword.other
+        2: entity.name.namespace
+
+    - match: '{{open_bracket}}'
+      push: sequence
+
+    - match: '{{open_bracket}}'
+      scope: invalid.illegal.stray-bracket-end
+
+
+
+  # Space-separated expressions within parentheses
+  sequence:
+    - meta_scope: meta.sequence
 
     # Package import
-    - match: \((require)\s*([\w/-]+)\s*\)
+    - match: (require){{ws}}({{package_name}})
       captures:
-        1: keyword.control.import.racket
-        2: entity.name.namespace.racket
+        1: keyword.control.import
+        2: entity.name.namespace
+
+    - match: '{{open_bracket}}'
+      push: [expr, sequence]
+
+    - match: '{{close_bracket}}'
+      pop: true
+
+    - match: '{{ident}}'
+      push: first_expr
+
+
+   
+    # function_definition:
+    #   - meta_scope: meta.function
+    #     function name: variable.function
+    #     then parameters
+
+
+
+  first_expr:
+    - meta_scope: meta.first_expr
+
+    # Keyword (not simply inbuilt functions). These are called "special terms" in Racket, and are the *only* case where an expression that begins a function is not a function call, but instead prepares Racket to expect some predefined custom syntax (essentially, a macro).
+    - match: (if|else|cond|define|let(\*|rec)?|lambda|require|provide|test|type-case|define-type|define-type-alias|define-struct|local|error|send|new)
+      scope: keyword.control  
+
+    # Any first expr within a sequence, if not a special term, must be a function call. If the expr is just an identifier, then this must be a variable holding a function.
+    - match: '{{ident}}'
+      scope: variable.function
+
+    # Push an expression upon encountering whitespace, then any character OTHER than a close_bracket
+    - match: '{{ws}}(?!{{close_bracket}})'
+      set: expr
+
+    # Pop on encountering close_bracket without consuming it (the enclosing sequence needs it to ends the sequence)
+    - match: (?={{close_bracket}})
+      pop: true
+
+  expr:
+    - meta_scope: meta.expr
+
+    # Variable definition
+    - match: (define){{ws}}({{ident}})
+      captures:
+        1: keyword.control
+        2: variable.other
 
     # Inbuilt special atomic value
-    - match: ((\#t(rue)?|#f(alse)?|'\(\)))\b
+    #   - true/false
+    #   - empty list / null
+    - match: (\#t(rue)?|#f(alse)?|'\(\)|null)
       captures:
-        1: constant.language.racket
+        1: constant.language
 
     # String
     - match: '"'
-      scope: punctuation.definition.string.begin.racket
-      push: double_quoted_string
-
-    # Line comment
-    - match: ;
-      scope: punctuation.definition.comment.racket
-      push: line_comment
-
-    # Function reference
-    - match: \((([\w\?\.\-]+))
-      captures:
-        1: variable.function.racket
-
-    # TODO: broken
-    # Function definition
-    # - match: \(define\s+\(
-    #   scope: meta.function.racket
-    #   push: function_definition
-
-
-    # Variable definition
-    - match: \((define)\s+([\w\-?\+^]+)\s*
-      captures:
-        1: keyword.control.racket
-        2: variable.other.racket
-
+      push: string
 
     # Classes
-    - match: \b[\w-]+%
+    - match: '{{ident}}%'
       scope: entity.name.class
 
     # Number
-    - match: '\b(-)?[0-9.]+\b'
-      scope: constant.numeric.racket
+    - match: (-)?[0-9]+(\.[0-9]+)?
+      scope: constant.numeric
 
-    # Keyword (not simply inbuilt functions)
-    - match: \b(if|lambda|cond|define|type-case|let|letrec|let!|require|test|else|define-type|define-type-alias|define-struct|not|local|error|send|new)[\s\)]
-      scope: keyword.control.racket
+    - match: '{{open_bracket}}'
+      push: sequence
 
-  # BROKEN
-  # function_definition:
-  #   - meta_scope: meta.function.racket
-  #   - match: ^([\w\-\?]+)
-  #     scope: variable.function.racket
-  #   - match: \s+[\w\-\?]
-  #     push: parameters
-  #   - match: \)
-  #     pop: true
-
-  parameters:
-    - meta_scope: meta.function.parameters.racket
-    - match: \)
+    - match: ({{ws}}|(?={{close_bracket}}))
       pop: true
 
-  double_quoted_string:
-    - meta_scope: string.quoted.double.racket
+
+
+  string:
+    - meta_include_prototype: false # The ONLY way to exit a string is with its own delimiter
+    - meta_scope: string.quoted.double
     - match: \\.
-      scope: constant.character.escape.racket
+      scope: constant.character.escape
     - match: '"'
-      scope: punctuation.definition.string.end.racket
       pop: true
+
+
 
   line_comment:
-    - meta_scope: comment.line.racket
+    - meta_scope: comment.line
     - match: $
-      pop: true
-
-  # UNUSED
-  identifier:
-    - meta_scope: variable.other.racket
-    - match: /[^\w-\?\+\.=<>]/
       pop: true

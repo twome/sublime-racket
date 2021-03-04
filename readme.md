@@ -1,2 +1,3 @@
-# Racket Syntax Highlighting for Sublime Text #
-Adds Racket Syntax Highlighting and Build System to Sublime Text 2.
+# Racket syntax highlighting for Sublime Text
+
+Adds a very basic and incomplete Racket syntax highlighting to Sublime Text 3.
